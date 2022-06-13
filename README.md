@@ -1,7 +1,7 @@
 # AgOpenSteer
 
-This component, running on ESP32 hardware, implements the autosteer function for a mobile platform (truck, tractor, etc.) and is part of an overall system
-precision vehicle guidance using the AgOpenGps solution.
+This component, running on ESP32 hardware, implements the autosteer function for a mobile platform (truck, tractor, etc.) and is part of a
+precision vehicle guidance system using the AgOpenGps solution.
 
 [AgOpenGPS GitHub] (https://github.com/farmerbriantee/AgOpenGPS)
 
