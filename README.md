@@ -7,7 +7,7 @@ precision vehicle guidance system using the AgOpenGps solution.
 
 [AgOpenGPS Web](https://discourse.agopengps.com/)
 
-The AgOpenSteer module communcates with other subsyetems within AgOpenGPS over a simple UDP network within the vehicle cab.  Other subsytems include:
+The AgOpenSteer module communcates with other subsystems within AgOpenGPS over a simple UDP network within the vehicle cab.  Other subsytems include:
 
 1. The Operator console (tablet)
 2. RTK enabled real-time navigation subsystem
