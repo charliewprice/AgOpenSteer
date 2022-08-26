@@ -126,16 +126,23 @@ void BNO055::setSensorOffsets(const bno055_offsets_t &offsets_type)
 
 }
 void BNO055::readIMU(){
-    uint8_t rawData[8];  // x/y/z gyro register data stored here
+    uint8_t rawData[18];  // x/y/z gyro register data stored here
     readBytes(BNO055_ADDRESS, BNO055_EUL_HEADING_LSB, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
     euler.head = ((int16_t)rawData[1] << 8) | rawData[0] ;  
     euler.roll = ((int16_t)rawData[3] << 8) | rawData[2] ;  
     euler.pitch = ((int16_t)rawData[5] << 8) | rawData[4] ;
-
+    
+    
   //read the vehicle turning around gyro
   readBytes(BNO055_ADDRESS, BNO055_GYR_DATA_X_LSB + 4, 6, &rawData[6]);                
   euler.angVel = ((int16_t)rawData[7] << 8) | rawData[6];
-
+  /*
+  Serial.print("head:"); Serial.print(euler.head); Serial.print(" ");
+  Serial.print("roll:"); Serial.print(euler.roll); Serial.print(" ");
+  Serial.print("pitch:");Serial.print(euler.pitch); Serial.print(" ");
+  Serial.print("aVel: ");Serial.print(euler.angVel); Serial.print("\n");
+  */
+  
 }
 
 
@@ -173,4 +180,3 @@ void BNO055::readBytes(uint8_t address, uint8_t subAddress, uint8_t count, uint8
         dest[i++] = Wire.read(); 
     }         
 }
-

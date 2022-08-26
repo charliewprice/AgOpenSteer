@@ -3,8 +3,14 @@ void assignGPIOs_start_extHardware() {
 	delay(50);
 
 	//init wire for ADS and MMA or BNO or CMPS
-	if (!Wire.begin(Set.SDA, Set.SCL, 400000)) {
+	//if (!Wire.begin(Set.SDA, Set.SCL, 400000)) {
+  if (!Wire.begin(21,22)) {  
+    delay(5000);
 		Serial.println("error INIT wire, ADS, BNO, CMPS, MMA will not work");
+    delay(5000);
+	} else {
+    Serial.println("I2C startup completed.");
+    delay(1000);
 	}
 	delay(20);
 
@@ -145,6 +151,7 @@ void assignGPIOs_start_extHardware() {
 			}
 		}
 		break;
+   
 	}//switch IMU
 
 	if (Set.MMAInstalled == 1)

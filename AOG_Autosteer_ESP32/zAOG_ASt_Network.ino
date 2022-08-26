@@ -17,6 +17,8 @@ void WiFi_handle_connection(void* pvParameters) {
             IPAddress gwIP, myIP;
 
             if (Set.debugmode) { Serial.print("WiFi_connect_step: "); Serial.println(WiFi_connect_step); }
+            
+                    
             switch (WiFi_connect_step) {
                 //WiFi network scan
             case 10:
@@ -32,8 +34,9 @@ void WiFi_handle_connection(void* pvParameters) {
 #endif   
                 WiFi_scan_networks();
                 //timeout?
-                if (now > WiFi_network_search_timeout) { WiFi_connect_step = 50; }
-                else {
+                if (now > WiFi_network_search_timeout) { 
+                  WiFi_connect_step = 50; 
+                } else {
                     if (WiFi_netw_nr > 0) {
                         //found network
                         WiFi_connect_step++;
@@ -62,8 +65,7 @@ void WiFi_handle_connection(void* pvParameters) {
                         WiFi_connect_step = 17;//close WiFi and try again
                         WiFi_network_search_timeout += (Set.timeoutRouter * 500);//add rest of time
                     }
-                }
-                else {
+                } else {
                     //connected
                     WiFi_connect_step++;
                     WiFi_network_search_timeout = 0;//reset timer
