@@ -309,6 +309,9 @@ long argVal = 0;
 //status display on LCD
 unsigned int status = 0;
 
+//steer status for display
+byte steerStat;
+
 long lastAogPacketMillis;
 #define AOG_PACKET_TIMEOUT 30000
 
@@ -343,7 +346,7 @@ void lcdUpdate() {
 
       char pit[6];
       sprintf(pit,"%03i", (int)BNO.euler.pitch);
-      lcd.setCursor(9, 1); //col, row
+      lcd.setCursor(10, 1); //col, row
       //delay(50);    
       lcd.print(pit);
       
@@ -353,9 +356,21 @@ void lcdUpdate() {
       //delay(50);    
       lcd.print(ang);
 
+      char en[4];
+      switch(digitalRead(Set.STEERSW_PIN)) {
+        case 0: sprintf(en,"ARM%i", steerStat); break;
+        case 1: sprintf(en,"LOCK"); break;
+      }      
+      lcd.setCursor(5,0); //col, row
+      lcd.print(en);
+
       lcd.setCursor(14,0);
       char net[3];
-      sprintf(net, "%02X", WiFi_connect_step);
+      switch(WiFi_connect_step) {
+        case 0:  sprintf(net, "Ok", WiFi_connect_step); break;
+        default: sprintf(net, "%02X", WiFi_connect_step); break;
+      }
+      
       lcd.print(net);
 
       lcd.setCursor(9,0);
@@ -385,8 +400,8 @@ void setup() {
 
   //init USB
   Serial.begin(115200);
-  while(!Serial);
-  delay(200); //without waiting, no serial print
+  //while(!Serial);
+  //delay(200); //without waiting, no serial print
   Serial.println("AgOpenGPS Autosteer starting...");
   //delay(5000);
 
@@ -445,7 +460,7 @@ void setup() {
   delay(500);
   lcd.setCursor(13,1);
   lcd.print("1.0");
-  delay(5000);
+  //delay(5000);
   lcd.clear();
 
   /* TEST THE LCD
@@ -497,11 +512,11 @@ void setup() {
       }
     }
   }
-  delay(500);
+  //delay(500);
 
   //handle WiFi LED status
   xTaskCreate(WiFi_LED_blink, "WiFiLEDBlink", 3072, NULL, 0, &taskHandle_LEDBlink);
-  delay(500);
+  //delay(500);
 
   vTaskDelay(5000); //waiting for other tasks to start
 
@@ -630,18 +645,19 @@ void loop() { //runs always (not in timed loop)
   if (steerEnable) {//steerEnable was set by switch so now check if really can turn on
     //auto Steer is off if AOG autosteer not active, Speed is too slow/high, encoder pulses
     if ((!bitRead(guidanceStatus, 0)) || (pulseCount >= Set.pulseCountMax) ||
-      (gpsSpeed < Set.autoSteerMinSpeed) || (gpsSpeed > Set.autoSteerMaxSpeed))
+       (gpsSpeed < Set.autoSteerMinSpeed) || 
+       (gpsSpeed > Set.autoSteerMaxSpeed))
     {
-      /*
+      
       if (!bitRead(guidanceStatus, 0))
-        Serial.println("Guidance Status");
+        steerStat = 1;
       if (pulseCount >= Set.pulseCountMax)
-        Serial.println("Pulse Count");
+        steerStat = 2;
       if (gpsSpeed < Set.autoSteerMinSpeed)
-        Serial.println("Too Slow");
+        steerStat = 3;
       if (gpsSpeed > Set.autoSteerMaxSpeed)
-        Serial.println("Too Fast");
-        */
+        steerStat = 4;
+      
       steerEnable = false;
       if (steerEnable != steerEnableOld) {
         //Serial.println(" Steer-Break:  AOG not active or Speed too low or Steering Wheel Encoder..");
@@ -656,6 +672,7 @@ void loop() { //runs always (not in timed loop)
   //turn autosteer OFF or ON//steer (motor...)
   if ((steerEnable) && (watchdogTimer < 200))
   {
+    steerStat = 0;
     digitalWrite(Set.AutosteerLED_PIN, HIGH);  //turn LED on (LED connected to MotorDriver = ON = Motor moves)
     steerAngleError = steerAngleActual - steerAngleSetPoint;   //calculate the steering error 
 

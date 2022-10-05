@@ -141,8 +141,7 @@ void BNO055::readIMU(){
   Serial.print("roll:"); Serial.print(euler.roll); Serial.print(" ");
   Serial.print("pitch:");Serial.print(euler.pitch); Serial.print(" ");
   Serial.print("aVel: ");Serial.print(euler.angVel); Serial.print("\n");
-  */
-  
+  */  
 }
 
 
