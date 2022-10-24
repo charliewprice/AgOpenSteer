@@ -35,15 +35,15 @@ struct Storage {
   uint16_t timeoutRouter = 1800;          // time (seconds) to wait for ssid1, after that become a standalone Access Point
   byte timeoutWebIO = 255;                // time (min) afterwards webinterface is switched off
 
-  byte WiFi_myip[4] = { 192, 168, 4, 77 };      // autosteer module 
+  byte WiFi_myip[4] = { 192, 168, 1, 77 };      // autosteer module 
   
-  byte WiFi_gwip[4] = { 192, 168, 4, 1 };       // Gateway IP only used if Accesspoint created
+  byte WiFi_gwip[4] = { 192, 168, 1, 1 };       // Gateway IP only used if Accesspoint created
   byte WiFi_ipDest_ending = 2;                  // ending of IP address to send UDP data to
   byte mask[4] = { 255, 255, 255, 0 };
   byte myDNS[4] = { 8, 8, 8, 8 };               //optional
 
   //Ethernet
-  byte Eth_myip[4] = { 192, 168, 4, 78 };       // autosteer module 
+  byte Eth_myip[4] = { 192, 168, 1, 78 };       // autosteer module 
   byte Eth_ipDest_ending = 2;                   // ending of IP address to send UDP data to
   byte Eth_mac[6] = { 0x70,0x69,0x69,0x2D,0x30,0x31 };
   bool Eth_static_IP = false;                   // false = use DHPC and set last number to 80 (x.x.x.80) / true = use IP as set above
@@ -169,7 +169,7 @@ struct Storage {
 
 };  Storage Set;
 
-boolean EEPROM_clear = false;  //set to true when changing settings to write them as default values: true -> flash -> boot -> false -> flash again
+boolean EEPROM_clear = true;  //set to true when changing settings to write them as default values: true -> flash -> boot -> false -> flash again
 
 
 //Sentence up to V4.3 ----------------------------------------------------------------------------- 
@@ -534,7 +534,7 @@ void loop() { //runs always (not in timed loop)
     ledcWrite(PWMBUZ_Ch, 128);
     delay(200);
     ledcWrite(PWMBUZ_Ch, 0);    
-    delay(5000);
+    delay(1000);
     ESP.restart();
   }
   //new data from AOG? Data comes via extra task and is written into byte array. Parsing called here
