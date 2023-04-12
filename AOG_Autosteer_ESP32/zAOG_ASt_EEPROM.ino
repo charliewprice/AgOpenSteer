@@ -10,7 +10,6 @@ byte EE_ident2 = vers_nr;
 //  Restore EEprom Data
 //--------------------------------------------------------------
 void restoreEEprom() {
-	Serial.println("read values from EEPROM");
 	byte ECheck = EEprom_empty_check();
 	if (ECheck == 1 || EEPROM_clear) { //first start?
 		EEprom_write_all();     //write default data
@@ -18,7 +17,6 @@ void restoreEEprom() {
 	}
 	if (ECheck == 2) { //data available
 		EEprom_read_all();
-		Serial.println("EEPROM read all");
 	}
 	if (Set.debugmode) { EEprom_show_memory(); }
 }
@@ -77,8 +75,7 @@ void EEprom_write_all() {
 //--------------------------------------------------------------
 void EEprom_read_all() {
 	int leng = sizeof(Set);
-	Serial.print(leng);
-	Serial.println(" Bytes reading from EEPROM ");
+	Serial.print("   "); Serial.print(leng); Serial.println(" bytes read from EEPROM ");
 	for (int n = 0; n < leng; n++) {
 		((unsigned char*)(&Set))[n] = EEPROM.read(n + 3);
 	}

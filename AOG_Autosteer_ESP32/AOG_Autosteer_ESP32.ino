@@ -144,6 +144,7 @@ struct Storage {
 
   uint8_t PWM_PIN = 27;               // PWM Output to motor controller (IBT2 or cytron)
   uint8_t DIR_PIN = 26;               // direction output to motor controller (IBT2 or cytron)
+
   uint8_t Current_sens_PIN = 35;      // (not supported at the moment) current sensor for IBT2 to read the force needed to turn steering wheel
 
   uint8_t Eth_CS_PIN = 5;             // CS PIN with SPI Ethernet hardware  SPI config: MOSI 23 / MISO 19 / CLK18 / CS5
@@ -169,7 +170,7 @@ struct Storage {
 
 };  Storage Set;
 
-boolean EEPROM_clear = true;  //set to true when changing settings to write them as default values: true -> flash -> boot -> false -> flash again
+boolean EEPROM_clear = false;  //set to true when changing settings to write them as default values: true -> flash -> boot -> false -> flash again
 
 
 //Sentence up to V4.3 ----------------------------------------------------------------------------- 
@@ -327,33 +328,28 @@ byte smiley[8] = {
 
 void lcdUpdate() {
   if ((millis() - lastLcdUpdateMillis)> LCD_UPDATE_MILLIS) {
-      if (status%60==0){
+      if (status%60==0){  //periodically clear the display
         lcd.clear();
-        //delay(1000);
       }
         
       char hdg[6];
       sprintf(hdg,"%03u", (int)(0.5 + BNO.euler.head/16.0));
       lcd.setCursor(0, 1); //col, row
-      //delay(50);    
       lcd.print(hdg);
 
       char rol[6];
       sprintf(rol,"%04i", (int)BNO.euler.roll);
       lcd.setCursor(4, 1); //col, row
-      //delay(50);    
       lcd.print(rol);
 
       char pit[6];
       sprintf(pit,"%03i", (int)BNO.euler.pitch);
       lcd.setCursor(10, 1); //col, row
-      //delay(50);    
       lcd.print(pit);
       
       char ang[6];
       sprintf(ang,"%3i", (int)steerAngleActual);
       lcd.setCursor(0,0); //col, row
-      //delay(50);    
       lcd.print(ang);
 
       char en[4];
@@ -391,19 +387,26 @@ void lcdUpdate() {
 // Setup procedure -----------------------------------------------------------------------------------------------
 
 void setup() {
-  delay(300);//wait for power to stabilize
-  delay(300);//wait for IO chips to get ready
 
-  //init Buzzer
-  ledcAttachPin(BUZZER_GPIO, PWMBUZ_Ch);
-  ledcSetup(PWMBUZ_Ch, PWMBUZ_Freq, PWMBUZ_Res);
+  delay(500);//wait for IO chips to get ready
 
-  //init USB
+  //init USB Serial
   Serial.begin(115200);
-  //while(!Serial);
-  //delay(200); //without waiting, no serial print
-  Serial.println("AgOpenGPS Autosteer starting...");
-  //delay(5000);
+ 
+  Serial.println("\n=041023========================\n\rAgOpenGPS Autosteer (-o-)    cp");
+  
+  //init buzzer
+  ledcSetup(PWMBUZ_Ch, PWMBUZ_Freq, PWMBUZ_Res);
+  ledcAttachPin(BUZZER_GPIO, PWMBUZ_Ch);  
+
+  //sound buzzer on restart
+  uint8_t nbeeps = 0;
+  while(nbeeps++<3) {
+    ledcWrite(PWMBUZ_Ch, 128);
+    delay(100);
+    ledcWrite(PWMBUZ_Ch, 0);
+    delay(200);
+  }
 
   if (Set.IMUType == 1) {   // Initialize the BNO055 if not done
     BNO.init();
@@ -430,7 +433,6 @@ void setup() {
   }
 
   //set GPIOs
-  Serial.println("GPIO Setup");
   assignGPIOs_start_extHardware();
   delay(200);
 
@@ -454,13 +456,12 @@ void setup() {
   lcd.print("AutoSteer   ");
   lcd.setCursor(0, 1);
   // print message
-  lcd.print("starting....");
+  lcd.print("STARTING....");
   lcd.setCursor(13,0);
   lcd.print("ver");
   delay(500);
   lcd.setCursor(13,1);
   lcd.print("1.0");
-  //delay(5000);
   lcd.clear();
 
   /* TEST THE LCD
@@ -512,15 +513,13 @@ void setup() {
       }
     }
   }
-  //delay(500);
-
+  
   //handle WiFi LED status
   xTaskCreate(WiFi_LED_blink, "WiFiLEDBlink", 3072, NULL, 0, &taskHandle_LEDBlink);
-  //delay(500);
-
+  
   vTaskDelay(5000); //waiting for other tasks to start
 
-  lastAogPacketMillis = millis();
+  lastAogPacketMillis = millis();  
 }
 
 // Main loop -----------------------------------------------------------------------------------------------
@@ -529,23 +528,29 @@ void setup() {
 void loop() { //runs always (not in timed loop)    
 
   if ((millis() - lastAogPacketMillis)> AOG_PACKET_TIMEOUT) {
+    Serial.println("Comm timeout - initiating RESET");
     lcd.setCursor(0, 0);
     lcd.print("PANIC"); 
     ledcWrite(PWMBUZ_Ch, 128);
     delay(200);
     ledcWrite(PWMBUZ_Ch, 0);    
-    delay(1000);
+    delay(2000);
     ESP.restart();
   }
+
   //new data from AOG? Data comes via extra task and is written into byte array. Parsing called here
+
   if (incommingDataLength[incommingBytesArrayNrToParse] != 0) { 
     parseDataFromAOG();
     lastAogPacketMillis = millis();
   } else { 
     vTaskDelay(3);     
-  }//wait if no new data to give time to other tasks 
+  }
+
+  //wait if no new data to give time to other tasks 
 
   //check, if steering wheel is moved. Debounce set to LOW in timed loop 10Hz
+
   if (Set.ShaftEncoder == 1) {
     if ((digitalRead(Set.encA_PIN) != prevEncAState) && !encDebounce) { pulseCount++; encDebounce = HIGH; }
     if ((digitalRead(Set.encB_PIN) != prevEncBState) && !encDebounce) { pulseCount++; encDebounce = HIGH; }
@@ -574,14 +579,7 @@ void loop() { //runs always (not in timed loop)
         else { Serial.println("Autosteer OFF by Switch B"); }
       }      
       steerEnableOld = steerEnable;
-    }
-        /*
-    if (steerEnable) { 
-        Serial.println("Autosteer ON by Switch"); 
-    } else { 
-        Serial.println("Autosteer OFF by Switch"); 
-    }
-    */
+    }    
     break;
   case 2:
     if (toggleSteerEnable) { //may set to true in timed loop (to debounce)    
@@ -640,6 +638,7 @@ void loop() { //runs always (not in timed loop)
     steerSwitch = steerEnable;
     break;
   }
+  
 
   //valid conditions to turn on autosteer?
   if (steerEnable) {//steerEnable was set by switch so now check if really can turn on
@@ -668,8 +667,10 @@ void loop() { //runs always (not in timed loop)
       digitalWrite(Set.AutosteerLED_PIN, LOW); //turn LED off
     }
   }
+  
 
   //turn autosteer OFF or ON//steer (motor...)
+  
   if ((steerEnable) && (watchdogTimer < 200))
   {
     steerStat = 0;
@@ -677,7 +678,7 @@ void loop() { //runs always (not in timed loop)
     steerAngleError = steerAngleActual - steerAngleSetPoint;   //calculate the steering error 
 
     calcSteeringPID();   //do the pid     
-    motorDrive();       //out to motors the pwm value 
+    motorDrive();        //out to motors the pwm value 
   } else {
     digitalWrite(Set.AutosteerLED_PIN, LOW);  //turn LED off 
 
@@ -693,18 +694,15 @@ void loop() { //runs always (not in timed loop)
     motorDrive(); //out to motors the pwm value   
     pulseCount = 0; //Reset counters if Autosteer is offline  
   }
-
-
-
+  
   //timed loop for WAS
   // Loop triggers every 20 msec
   now = millis();
-
-  if (now - WASLoopLastTime >= WAS_LOOP_TIME)
-  {
+  if (now - WASLoopLastTime >= WAS_LOOP_TIME)  {
     WASLoopLastTime = now;
-
-    SetRelays(); //turn on off sections, do in timed loop, if new data comes in
+    //04-10-23 SetRelays() is causing GPIO error message:
+    //E (32005) gpio: gpio_set_level(226): GPIO output gpio_num error
+    //cwp-d SetRelays(); //turn on off sections, do in timed loop, if new data comes in
     
     encDebounce = LOW; //reset steerEncoder debounce
 
@@ -748,12 +746,12 @@ void loop() { //runs always (not in timed loop)
     steerAngleActual = ((float)(steeringPosition) / Set.steerSensorCounts);
 
   }//WAS timed loop
-
+  
 
 // data timed loop
 // Loop triggers every 100 msec or when data from AOG came in and sends back gyro heading16, and roll, steer angle etc
   now = millis();
-
+  
   if ((now - DataLoopLastTime >= Data_LOOP_TIME) || (newDataFromAOG))
   {
     newDataFromAOG = false;
@@ -1101,5 +1099,6 @@ void loop() { //runs always (not in timed loop)
     vTaskDelay(1);//all done give time to other tasks
    
   }  //end of  data timed loop
+  
 
 }

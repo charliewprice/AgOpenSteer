@@ -223,23 +223,22 @@ void WiFi_handle_connection(void* pvParameters) {
 
 void WiFi_scan_networks()
 {
-    Serial.println("scanning for WiFi networks");
+    Serial.println("\n===============================\n\rSearching for WiFi network");
     // WiFi.scanNetworks will return the number of networks found
     int WiFi_num_netw_inReach = WiFi.scanNetworks();
-    Serial.print("scan done: ");
+    Serial.print("   scan done: ");
     if (WiFi_num_netw_inReach == 0) {
-        Serial.println("no networks found");
+        Serial.println("   no networks found");
     }
     else
     {
         Serial.print(WiFi_num_netw_inReach);
-        Serial.println(" network(s) found");
+        Serial.println("  network(s) found:");
         for (int i = 0; i < WiFi_num_netw_inReach; ++i) {
-            Serial.println("#" + String(i + 1) + " network : " + WiFi.SSID(i));
+            Serial.println("   " + WiFi.SSID(i));
         }
         delay(800);//.SSID gives no value if no delay
-        delay(500);
-
+        
         for (int i = 0; i < WiFi_num_netw_inReach; ++i) {
             if (WiFi.SSID(i) == Set.ssid1) {
                 // network found in list

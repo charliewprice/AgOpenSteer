@@ -1,6 +1,6 @@
 void assignGPIOs_start_extHardware() {
-  Serial.println("assignGPIO executing now.");
-	delay(50);
+  Serial.println("   Initializing I/O pins");
+  delay(50);
 
 	//init wire for ADS and MMA or BNO or CMPS
 	//if (!Wire.begin(Set.SDA, Set.SCL, 400000)) {
@@ -9,7 +9,7 @@ void assignGPIOs_start_extHardware() {
 		Serial.println("error INIT wire, ADS, BNO, CMPS, MMA will not work");
     delay(5000);
 	} else {
-    Serial.println("I2C startup completed.");
+    Serial.println("   I2C is running");
     delay(1000);
 	}
 	delay(20);
@@ -37,15 +37,13 @@ void assignGPIOs_start_extHardware() {
 	//if (Set.WASType == 0)  Set.WebIOSteerPosZero = 2048;                //Starting Point with ESP ADC 2048 
 	//if (Set.WASType > 0 && Set.WASType < 3)  Set.WebIOSteerPosZero = 13000;  //with ADS start with 13000  
 
-  Serial.println("SteerSwitchType GPIO Setup.");
-	if (Set.SteerSwitchType == 0) { 
+  if (Set.SteerSwitchType == 0) { 
 	  pinMode(Set.STEERSW_PIN, INPUT_PULLDOWN); 
     Serial.print(Set.STEERSW_PIN); Serial.println(" is INPUT_PULLDOWN type.");
 	}
 	if (Set.SteerSwitchType > 0) { 
 	  pinMode(Set.STEERSW_PIN, INPUT_PULLUP); 
-    Serial.print(Set.STEERSW_PIN); Serial.println(" is INPUT_PULLUP type.");
-	}
+  }
 
 	//Setup Interrupt -Steering Wheel encoder
 	if (Set.encA_PIN < 255) { pinMode(Set.encA_PIN, INPUT_PULLUP); }
