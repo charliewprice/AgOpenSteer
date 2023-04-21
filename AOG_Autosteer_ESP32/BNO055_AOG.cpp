@@ -127,7 +127,9 @@ void BNO055::setSensorOffsets(const bno055_offsets_t &offsets_type)
 }
 void BNO055::readIMU(){
     uint8_t rawData[18];  // x/y/z gyro register data stored here
-    readBytes(BNO055_ADDRESS, BNO055_EUL_HEADING_LSB, 6, &rawData[0]);  // Read the six raw data registers sequentially into data array
+    // Read the six raw data registers sequentially into data array
+    readBytes(BNO055_ADDRESS, BNO055_EUL_HEADING_LSB, 6, &rawData[0]);
+    // 04-19-23 IMU Read returning zeros #3, let's try getting this one byte at a time
     euler.head = ((int16_t)rawData[1] << 8) | rawData[0] ;  
     euler.roll = ((int16_t)rawData[3] << 8) | rawData[2] ;  
     euler.pitch = ((int16_t)rawData[5] << 8) | rawData[4] ;

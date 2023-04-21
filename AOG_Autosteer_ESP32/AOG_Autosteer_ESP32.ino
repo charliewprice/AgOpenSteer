@@ -338,12 +338,14 @@ void lcdUpdate() {
       lcd.print(hdg);
 
       char rol[6];
-      sprintf(rol,"%04i", (int)BNO.euler.roll);
+      // #5 Readings on LCD should match those in AOG
+      sprintf(rol,"%03i", (int)BNO.euler.roll/16);
       lcd.setCursor(4, 1); //col, row
       lcd.print(rol);
 
       char pit[6];
-      sprintf(pit,"%03i", (int)BNO.euler.pitch);
+      // #5 Readings on LCD should match those in AOG
+      sprintf(pit,"%03i", (int)BNO.euler.pitch/16);
       lcd.setCursor(10, 1); //col, row
       lcd.print(pit);
       
@@ -911,6 +913,13 @@ void loop() { //runs always (not in timed loop)
         temInt = int(heading * 10);
         steerToAOG[8] = temInt >> 8;
         steerToAOG[7] = byte(temInt);
+        // #4 IMU Roll not appearing in AOG
+        //the roll x10
+        roll16 = (int) BNO.euler.roll;
+        roll = float(roll16) /16;
+        temInt = int(roll * 10);
+        steerToAOG[10] = temInt >>8;
+        steerToAOG[9] = byte(temInt);
         break;
 
       case 2://CMPS14     
