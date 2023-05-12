@@ -1,7 +1,6 @@
 void assignGPIOs_start_extHardware() {
-  Serial.println("   Initializing I/O pins");
-  delay(50);
-
+  Serial.println("   Initializing I/O");
+  //delay(50);
 	//init wire for ADS and MMA or BNO or CMPS
 	//if (!Wire.begin(Set.SDA, Set.SCL, 400000)) {
   if (!Wire.begin(21,22)) {  
@@ -10,9 +9,8 @@ void assignGPIOs_start_extHardware() {
     delay(5000);
 	} else {
     Serial.println("   I2C is running");
-    delay(1000);
 	}
-	delay(20);
+	//delay(20);
 
 	//init GPIO pins, if 255 = unused/not connected
 #if useLED_BUILTIN
@@ -50,8 +48,6 @@ void assignGPIOs_start_extHardware() {
 	if (Set.encB_PIN < 255) { pinMode(Set.encB_PIN, INPUT_PULLUP); }
 
 	delay(50);
-
-
 	//IMU
 	byte error = 0;	
 	switch (Set.IMUType) {		
@@ -65,121 +61,47 @@ void assignGPIOs_start_extHardware() {
 		steerToAOG[8] = 0x27;
 		heading = 0;
 		break;
-
-	case 1:	// BNO055 init
-		BNO.init();
-		delay(10);
-		BNO.setExtCrystalUse(true);   //use external 32K crystal
-		//roll no hardware = 8888
-		steerToAOG[9] = 0xB8;
-		steerToAOG[10] = 0x22;
-		roll = 0;
-		break;
-
-	case 2://test if CMPS working			
-		Wire.beginTransmission(Set.CMPS14_ADDRESS);
-		error = Wire.endTransmission();
-		if (error == 0)
-		{
-			if (Set.debugmode) {
-				Serial.println("Error = 0");
-				Serial.print("CMPS14 ADDRESs: 0x");
-				Serial.println(Set.CMPS14_ADDRESS, HEX);
-				Serial.println("CMPS14 Ok.");
-			}
-		}
-		else
-		{
-			Serial.println("Error = 4");
-			Serial.print("CMPS not Connected or Found at address 0x");
-			Serial.println(Set.CMPS14_ADDRESS, HEX);
-			Set.IMUType = 0;
-		}
-		break;
-
 	case 3:
-		for (int i = 0; i < nrBNO08xAdresses; i++)
-		{
+		for (int i = 0; i < nrBNO08xAdresses; i++) {
 			bno08xAddress = Set.bno08xAddresses[i];
-
 			Serial.print("\r\nChecking for BNO08X on ");
 			Serial.println(bno08xAddress, HEX);
 			Wire.beginTransmission(bno08xAddress);
 			error = Wire.endTransmission();
 
-			if (error == 0)
-			{
+			if (error == 0)	{
 				Serial.println("Error = 0");
 				Serial.print("BNO08X ADDRESs: 0x");
 				Serial.println(bno08xAddress, HEX);
 				Serial.println("BNO08X Ok.");
-
 				// Initialize BNO080 lib        
-				if (bno08x.begin(bno08xAddress))
-				{
+				if (bno08x.begin(bno08xAddress)) {
 					Wire.setClock(400000); //Increase I2C data rate to 400kHz
-
 					// Use gameRotationVector
 					bno08x.enableGameRotationVector(REPORT_INTERVAL); //Send data update every REPORT_INTERVAL in ms for BNO085
-
 					// Retrieve the getFeatureResponse report to check if Rotation vector report is corectly enable
-					if (bno08x.getFeatureResponseAvailable() == true)
-					{
-						if (bno08x.checkReportEnable(SENSOR_REPORTID_GAME_ROTATION_VECTOR, REPORT_INTERVAL) == false) bno08x.printGetFeatureResponse();
-
+					if (bno08x.getFeatureResponseAvailable() == true) {
+						if (bno08x.checkReportEnable(SENSOR_REPORTID_GAME_ROTATION_VECTOR, REPORT_INTERVAL) == false) 
+						  bno08x.printGetFeatureResponse();
 						// Break out of loop
-					   // useBNO08x = true;
+					    // useBNO08x = true;
 						break;
-					}
-					else
-					{
+					} else {
 						Set.IMUType = 0;
 						Serial.println("BNO08x init fails!!");
 					}
-				}
-				else
-				{
+				} else {
 					Serial.println("BNO080 not detected at given I2C address.");
 				}
-			}
-			else
-			{
+			} else {
 				Serial.println("Error = 4");
 				Serial.println("BNO08X not Connected or Found");
 			}
 		}
 		break;
    
-	}//switch IMU
-
-	if (Set.MMAInstalled == 1)
-	{
-		// MMA8452 (1) Inclinometer
-		if (MMA1C.init()) {
-			delay(10);
-
-			MMA1C.setDataRate(MMA_800hz);
-			MMA1C.setRange(MMA_RANGE_8G);
-			MMA1C.setHighPassFilter(false);
-			if (Set.debugmode) { Serial.println("MMA init OK"); }
-		}
-		else { Serial.println("MMA init fails at I2C address 1C!!"); Set.MMAInstalled = 0; }
-	}
-	else if (Set.MMAInstalled == 2)
-	{
-		// MMA8452 (1) Inclinometer
-		if (MMA1D.init()) {
-			delay(10);
-			MMA1D.setDataRate(MMA_800hz);
-			MMA1D.setRange(MMA_RANGE_8G);
-			MMA1D.setHighPassFilter(false);
-			if (Set.debugmode) { Serial.println("MMA init OK"); }
-		}
-		else { Serial.println("MMA init fails at I2C address 1D!!"); Set.MMAInstalled = 0; }
-	}
-
+	}//switch IMU	
 	//ADS1115
 	adc.setSampleRate(ADS1115_REG_CONFIG_DR_128SPS); //128 samples per second
 	adc.setGain(ADS1115_REG_CONFIG_PGA_6_144V);
-
 }

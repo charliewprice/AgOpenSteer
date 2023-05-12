@@ -165,59 +165,23 @@ void process_Request()
 			if ((argVal >= 0) && (argVal <= 255)) {
 				Set.aogVersion = byte(argVal);
 				//write PGN to output sentence	
-				if (Set.aogVersion == 17) {
-					steerToAOG[0] = FromAOGSentenceHeader[2];
-					steerToAOG[1] = steerDataToAOGHeader;  //same PGN as V4.6 or higher
-					DataToAOGLength = steerDataSentenceToAOGLengthV17;
-				}
-				else {
-					steerToAOG[0] = FromAOGSentenceHeader[0];   //0x80
-					steerToAOG[1] = FromAOGSentenceHeader[1];   //0x81
-					steerToAOG[2] = FromAOGSentenceHeader[2];   //0x7F
-					steerToAOG[3] = steerDataToAOGHeader;
-					steerToAOG[4] = steerDataSentenceToAOGLength - 6; //length of data = all - header - length - CRC
-					DataToAOGLength = steerDataSentenceToAOGLength;
-				}
+				steerToAOG[0] = FromAOGSentenceHeader[0];   //0x80
+				steerToAOG[1] = FromAOGSentenceHeader[1];   //0x81
+				steerToAOG[2] = FromAOGSentenceHeader[2];   //0x7F
+				steerToAOG[3] = steerDataToAOGPGN;
+				steerToAOG[4] = steerDataSentenceToAOGLength - 6; //length of data = all - header - length - CRC
+				DataToAOGLength = steerDataSentenceToAOGLength;				
 			}
 		}
 		if (WiFi_Server.argName(n) == "DataTransfVia") {
 			temInt = WiFi_Server.arg(n).toInt();
-			if ((temInt <= 20) && (temInt >= 0)) { Set.DataTransVia = byte(temInt); }
-			if (Set.DataTransVia == 10) {
-				if (Eth_connect_step == 255) {
-					Eth_connect_step = 10;
-					xTaskCreate(Eth_handle_connection, "Core1EthConnectHandle", 3072, NULL, 1, &taskHandle_Eth_connect);
-					delay(500);
-				}
+			if ((temInt <= 20) && (temInt >= 0)) { 
+			  //Set.DataTransVia = byte(temInt); 
 			}
-			if (Set.DataTransVia < 5) {//USB
-				if (!USBDataTaskRunning) {
-					xTaskCreate(getDataFromAOGUSB, "DataFromAOGHandleUSB", 5000, NULL, 1, &taskHandle_DataFromAOGUSB);
-					delay(500);
-				}
-				if (WiFiDataTaskRunning) { vTaskDelete(taskHandle_DataFromAOGWiFi); delay(5); WiFiDataTaskRunning = false; }
-				if (EthDataTaskRunning) { vTaskDelete(taskHandle_DataFromAOGEth); delay(5); EthDataTaskRunning = false; }
-			}
-			else {
-				if (Set.DataTransVia < 10) {//WiFi UDP
-					if (!WiFiDataTaskRunning) {
-						xTaskCreate(getDataFromAOGWiFi, "DataFromAOGHandleWiFi", 5000, NULL, 1, &taskHandle_DataFromAOGWiFi);
-						delay(500);
-					}
-					if (USBDataTaskRunning) { vTaskDelete(taskHandle_DataFromAOGUSB); delay(5); USBDataTaskRunning = false; }
-					if (EthDataTaskRunning) { vTaskDelete(taskHandle_DataFromAOGEth); delay(5); EthDataTaskRunning = false; }
-				}
-				else {
-					if (Set.DataTransVia == 10) {//Ethernet UDP
-						if (!EthDataTaskRunning) {
-							xTaskCreate(getDataFromAOGEth, "DataFromAOGHandleEth", 5000, NULL, 1, &taskHandle_DataFromAOGEth);
-							delay(500);
-						}
-						if (WiFiDataTaskRunning) { vTaskDelete(taskHandle_DataFromAOGWiFi); delay(5); WiFiDataTaskRunning = false; }
-						if (USBDataTaskRunning) { vTaskDelete(taskHandle_DataFromAOGUSB); delay(5); USBDataTaskRunning = false; }
-					}
-				}
-			}
+			if (!WiFiDataTaskRunning) {
+			  xTaskCreate(getDataFromAOGWiFi, "DataFromAOGHandleWiFi", 5000, NULL, 1, &taskHandle_DataFromAOGWiFi);
+			  delay(500);
+			}			
 		}
 		if (WiFi_Server.argName(n) == "OUTPUT_TYPE") { Set.output_type = byte(WiFi_Server.arg(n).toInt()); }
 		if (WiFi_Server.argName(n) == "invMotor") {
@@ -248,13 +212,13 @@ void process_Request()
 			assignGPIOs_start_extHardware();
 		}
 		if (WiFi_Server.argName(n) == "INCLINO_TYPE") {
-			Set.MMAInstalled = byte(WiFi_Server.arg(n).toInt());
+			//Set.MMAInstalled = byte(WiFi_Server.arg(n).toInt());
 			assignGPIOs_start_extHardware();
 		}		
-		if (WiFi_Server.argName(n) == "MMAAxis") { Set.UseMMA_X_Axis = byte(WiFi_Server.arg(n).toInt()); }
+		//if (WiFi_Server.argName(n) == "MMAAxis") { Set.UseMMA_X_Axis = byte(WiFi_Server.arg(n).toInt()); }
 		if (WiFi_Server.argName(n) == "rollMaxChan") {
 			argVal = WiFi_Server.arg(n).toInt();
-			if ((argVal >= 1) && (argVal <= 50)) { Set.MMA_roll_MAX_STEP = byte(argVal); }
+			//if ((argVal >= 1) && (argVal <= 50)) { Set.MMA_roll_MAX_STEP = byte(argVal); }
 		}
 		if (WiFi_Server.argName(n) == "invRoll") {
 			if (WiFi_Server.arg(n) == "true") { Set.InvertRoll = 1; }
@@ -320,55 +284,6 @@ void process_Request()
 			Set.WiFi_ipDest_ending = byte(temInt);
 		}
 
-		if (WiFi_Server.argName(n) == "EthIP0") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_myip[0] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthIP1") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_myip[1] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthIP2") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_myip[2] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthIP3") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_myip[3] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthStatIP") {
-			temInt = WiFi_Server.arg(n).toInt();
-			if (temInt == 1) { Set.Eth_static_IP = true; }
-			else { Set.Eth_static_IP = false; }
-		}
-		if (WiFi_Server.argName(n) == "EthIPDest") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_ipDest_ending = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthMac0") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_mac[0] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthMac1") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_mac[1] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthMac2") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_mac[2] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthMac3") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_mac[3] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthMac4") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_mac[4] = byte(temInt);
-		}
-		if (WiFi_Server.argName(n) == "EthMac5") {
-			temInt = WiFi_Server.arg(n).toInt();
-			Set.Eth_mac[5] = byte(temInt);
-		}
 		if (WiFi_Server.argName(n) == "debugmode") {
 			if (WiFi_Server.arg(n) == "true") { Set.debugmode = true; }
 			else { Set.debugmode = false; }
@@ -449,7 +364,7 @@ void make_HTML01() {
 	strcat(HTML_String, "<h2>WiFi Network Client Access Data</h2>");
 	strcat(HTML_String, "<form>");
 	strcat(HTML_String, "</b>If access to networks fails, an accesspoint will be created:<br>SSID: <b>");
-	strcat(HTML_String, Set.ssid_ap);
+	//strcat(HTML_String, Set.ssid_ap);
 	strcat(HTML_String, "</b>     with no password<br><br><table>");
 	set_colgroup(250, 300, 150, 0, 0);
 
@@ -476,7 +391,7 @@ void make_HTML01() {
 	strcat(HTML_String, "<td colspan=\"3\">time, trying to connect to network</td></tr>");
 	strcat(HTML_String, "<td colspan=\"3\">after time has passed access point is opened</td></tr>");
 	strcat(HTML_String, "<tr><td><b>Timeout (s):</b></td><td><input type = \"number\" onchange=\"sendVal('/?timeoutRout='+this.value)\" name = \"timeoutRout\" min = \"20\" max = \"1000\" step = \"1\" style= \"width:200px\" value = \"");// placeholder = \"");
-	strcati(HTML_String, Set.timeoutRouter);
+	//strcati(HTML_String, Set.timeoutRouter);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type= \"button\" onclick= \"sendVal('/?Save=true')\" style= \"width:120px\" value=\"Save\"></button></td>");
 	strcat(HTML_String, "</tr>");
@@ -525,14 +440,14 @@ void make_HTML01() {
 	//transfer data via 0 = USB / 7 = WiFi UDP / 8 = WiFi UDP 2x / 10 = Ethernet
 	strcat(HTML_String, "<tr>");
 	strcat(HTML_String, "<td></td><td><input type = \"radio\" onclick=\"sendVal('/?DataTransfVia=0')\" name=\"DataTransfVia\" id=\"JZ\" value=\"0\"");
-	if (Set.DataTransVia == 0)strcat(HTML_String, " CHECKED");
+	//if (Set.DataTransVia == 0)strcat(HTML_String, " CHECKED");
 	strcat(HTML_String, "><label for=\"JZ\">USB</label></td>");
 	strcat(HTML_String, "<td><input type= \"button\" onclick= \"sendVal('/?Save=true')\" style= \"width:120px\" value=\"Save\"></button></td>");
 	strcat(HTML_String, "</tr>");
 
 	strcat(HTML_String, "<tr>");
 	strcat(HTML_String, "<td></td><td><input type = \"radio\" onclick=\"sendVal('/?DataTransfVia=7')\" name=\"DataTransfVia\" id=\"JZ\" value=\"7\"");
-	if (Set.DataTransVia == 7)strcat(HTML_String, " CHECKED");
+	//if (Set.DataTransVia == 7)strcat(HTML_String, " CHECKED");
 	strcat(HTML_String, "><label for=\"JZ\">WiFi (UDP) (default)</label></td></tr>");
 
 /*	strcat(HTML_String, "<tr>");
@@ -542,7 +457,7 @@ void make_HTML01() {
 */
 	strcat(HTML_String, "<tr>");
 	strcat(HTML_String, "<td></td><td colspan=\"2\"><input type = \"radio\" onclick=\"sendVal('/?DataTransfVia=10')\" name=\"DataTransfVia\" id=\"JZ\" value=\"10\"");
-	if (Set.DataTransVia == 10)strcat(HTML_String, " CHECKED");
+	//if (Set.DataTransVia == 10)strcat(HTML_String, " CHECKED");
 	strcat(HTML_String, "><label for=\"JZ\">Ethernet (UDP) Ethernet hardware needed!!</label></td></tr>");
 
 	strcat(HTML_String, "</table>");
@@ -945,7 +860,7 @@ void make_HTML01() {
 		strcat(HTML_String, "\" value=\"");
 		strcati(HTML_String, i);
 		strcat(HTML_String, "\"");
-		if (Set.MMAInstalled == i)strcat(HTML_String, " CHECKED");
+		//if (Set.MMAInstalled == i)strcat(HTML_String, " CHECKED");
 		strcat(HTML_String, "><label for=\"JZ");
 		strcati(HTML_String, i);
 		strcat(HTML_String, "\">");
@@ -958,58 +873,7 @@ void make_HTML01() {
 	}
 
 	strcat(HTML_String, "</tr><tr><td colspan=\"3\">&nbsp;</td></tr>");
-	if (Set.MMAInstalled != 0) {
-		strcat(HTML_String, "<tr><td><br>Tilt Angle</td>");
-		strcat(HTML_String, "<td><divbox align=\"right\"><font size=\"+1\"><b>");
-		if ((roll / 16) < 10) { strcatf(HTML_String, (roll / 16), 3, 1); }
-		else { strcatf(HTML_String, (roll / 16), 4, 1); }
-		strcat(HTML_String, "</b></font></divbox>degree</td>");
-
-		//Refresh button
-		strcat(HTML_String, "<td><input type= \"button\" onclick= \"location.reload()\" style= \"width:120px\" value=\"Refresh\"></button></td>");
-		strcat(HTML_String, "</tr>");
-
-		strcat(HTML_String, "<tr>");
-		strcat(HTML_String, "<td><b>Calibrate Inclinometer</b></td>");
-		strcat(HTML_String, "<td><input type= \"button\" onclick= \"sendVal('/?ACTION=");
-		strcati(HTML_String, ACTION_SET_INCL_ZERO);
-		strcat(HTML_String, "')\" style= \"width:200px\" value=\"ZERO NOW\"></button></td>");
-		strcat(HTML_String, "<td>Tilt Calibration takes place on a flat area with no slope</td></tr>");
-
-		strcat(HTML_String, "<tr> <td colspan=\"3\">&nbsp;</td> </tr>");
-		// Checkbox invert roll
-		strcat(HTML_String, "<tr>");
-		strcat(HTML_String, "<td></td><td><input type=\"checkbox\" onclick=\"sendVal('/?invRoll='+this.checked)\" name=\"invRoll\" id = \"Part\" value = \"1\" ");
-		if (Set.InvertRoll == 1) strcat(HTML_String, "checked ");
-		strcat(HTML_String, "> ");
-		strcat(HTML_String, "<label for =\"Part\"><b> Invert roll</b></label>");
-		strcat(HTML_String, "</td>");
-		strcat(HTML_String, "<td><input type= \"button\" onclick= \"sendVal('/?Save=true')\" style= \"width:120px\" value=\"Save\"></button></td>");
-
-		// radio button use x/y axis
-		strcat(HTML_String, "<tr> <td colspan=\"3\">&nbsp;</td> </tr>");
-		strcat(HTML_String, "<tr> <td colspan=\"3\"><b>MMA orientation:</b></td> </tr>");
-		strcat(HTML_String, "<tr>");
-		strcat(HTML_String, "<td>MMA uses</td><td><input type = \"radio\" onclick=\"sendVal('/?MMAAxis=1')\" name=\"MMAAxis\" id=\"JZ\" value=\"1\"");
-		if (Set.UseMMA_X_Axis == 1)strcat(HTML_String, " CHECKED");
-		strcat(HTML_String, "><label for=\"JZ\">X axis (default)</label></td>");
-		strcat(HTML_String, "<td><input type= \"button\" onclick= \"sendVal('/?Save=true')\" style= \"width:120px\" value=\"Save\"></button></td>");
-		strcat(HTML_String, "</tr>");
-
-		strcat(HTML_String, "<tr>");
-		strcat(HTML_String, "<td></td><td><input type = \"radio\" onclick=\"sendVal('/?MMAAxis=0')\" name=\"MMAAxis\" id=\"JZ\" value=\"0\"");
-		if (Set.UseMMA_X_Axis == 0)strcat(HTML_String, " CHECKED");
-		strcat(HTML_String, "><label for=\"JZ\">Y axis</label></td></tr>");
-
-		//roll max change
-		strcat(HTML_String, "<tr>");
-		strcat(HTML_String, "<td colspan=\"3\">&nbsp;</td></tr>");
-		strcat(HTML_String, "<tr><td><b>MMA Filter setting:</b></td></tr>");
-		strcat(HTML_String, "<tr><td>maximum roll change per 100ms:</td><td><input type = \"number\" onchange=\"sendVal('/?rollMaxChan='+this.value)\" name = \"rollMaxChan\" min = \"1\" max = \"40\" step = \"1\" style= \"width:200px\" value = \"");// placeholder = \"");
-		strcati(HTML_String, Set.MMA_roll_MAX_STEP);
-		strcat(HTML_String, "\"></td></tr>");
-	}
-
+	
 	strcat(HTML_String, "</table>");
 	strcat(HTML_String, "</form>");
 	strcat(HTML_String, "<br><hr>");
@@ -1065,14 +929,14 @@ void make_HTML01() {
 	//use DHCP/static IP radio button
 	strcat(HTML_String, "<tr>");
 	strcat(HTML_String, "<td></td><td><input type = \"radio\" onclick=\"sendVal('/?EthStatIP=0')\" name=\"EthStatIP\" id=\"JZ\" value=\"0\"");
-	if (Set.Eth_static_IP == false)strcat(HTML_String, " CHECKED");
+	//if (Set.Eth_static_IP == false)strcat(HTML_String, " CHECKED");
 	strcat(HTML_String, "><label for=\"JZ\">use DHCP (default)</label></td>");
 	strcat(HTML_String, "<td><input type= \"button\" onclick= \"sendVal('/?Save=true')\" style= \"width:120px\" value=\"Save\"></button></td>");
 	strcat(HTML_String, "</tr>");
 
 	strcat(HTML_String, "<tr>");
 	strcat(HTML_String, "<td></td><td><input type = \"radio\" onclick=\"sendVal('/?EthStatIP=1')\" name=\"EthStatIP\" id=\"JZ\" value=\"1\"");
-	if (Set.Eth_static_IP == true)strcat(HTML_String, " CHECKED");
+	//if (Set.Eth_static_IP == true)strcat(HTML_String, " CHECKED");
 	strcat(HTML_String, "><label for=\"JZ\">use fixed IP from below</label></td></tr>");
 
 	strcat(HTML_String, "</table><br>");
@@ -1083,16 +947,16 @@ void make_HTML01() {
 	strcat(HTML_String, "<table>");
 	set_colgroup(150, 50, 50, 50, 50);
 	strcat(HTML_String, "<tr><td>IP address</td><td><input type = \"number\"  onchange=\"sendVal('/?EthIP0='+this.value)\" name = \"EthIP\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_myip[0]);
+	//strcati(HTML_String, Set.Eth_myip[0]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthIP1='+this.value)\" name = \"EthIP\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_myip[1]);
+	//strcati(HTML_String, Set.Eth_myip[1]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthIP2='+this.value)\" name = \"EthIP\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_myip[2]);
+	//strcati(HTML_String, Set.Eth_myip[2]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthIP3='+this.value)\" name = \"EthIP\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_myip[3]);
+	//strcati(HTML_String, Set.Eth_myip[3]);
 	strcat(HTML_String, "\"></td></table><br>");
 
 	//IP destination
@@ -1106,7 +970,7 @@ void make_HTML01() {
 	strcat(HTML_String, "<table>");
 	set_colgroup(150, 50, 50, 50, 50);
 	strcat(HTML_String, "<tr><td>IP address destination</td><td>xxx</td><td>xxx</td><td>xxx<td><input type = \"number\"  onchange=\"sendVal('/?EthIPDest='+this.value)\" name = \"EthIPDest\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_ipDest_ending);
+	//strcati(HTML_String, Set.Eth_ipDest_ending);
 	strcat(HTML_String, "\"></td></table><br>");
 
 	//mac
@@ -1114,22 +978,22 @@ void make_HTML01() {
 	strcat(HTML_String, "<table>");
 	set_colgroup(150, 50, 50, 50, 50, 50, 50);
 	strcat(HTML_String, "<tr><td>mac address</td><td><input type = \"number\"  onchange=\"sendVal('/?EthMac0='+this.value)\" name = \"EthMac\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_mac[0]);
+	//strcati(HTML_String, Set.Eth_mac[0]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthMac1='+this.value)\" name = \"EthMac\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_mac[1]);
+	//strcati(HTML_String, Set.Eth_mac[1]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthMac2='+this.value)\" name = \"EthMac\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_mac[2]);
+	//strcati(HTML_String, Set.Eth_mac[2]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthMac3='+this.value)\" name = \"EthMac\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_mac[3]);
+	//strcati(HTML_String, Set.Eth_mac[3]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthMac4='+this.value)\" name = \"EthMac\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_mac[4]);
+	//strcati(HTML_String, Set.Eth_mac[4]);
 	strcat(HTML_String, "\"></td>");
 	strcat(HTML_String, "<td><input type = \"number\"  onchange=\"sendVal('/?EthMac5='+this.value)\" name = \"EthMac\" min = \"0\" max = \"255\" step = \"1\" style= \"width:40px\" value = \"");
-	strcati(HTML_String, Set.Eth_mac[5]);
+	//strcati(HTML_String, Set.Eth_mac[5]);
 	strcat(HTML_String, "\"></td></table>");
 
 

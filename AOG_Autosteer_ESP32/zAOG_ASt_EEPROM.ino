@@ -70,10 +70,19 @@ void EEprom_write_all() {
 	//EEPROM.put(3, Set);
 	delay(50);
 	EEPROM.commit();
+  beep(5);
+  /*
 	delay(50);
+  for(uint8_t nbeeps= 0; nbeeps<5; nbeeps++) {
+    ledcWrite(PWMBUZ_Ch, 128);
+    delay(50);
+    ledcWrite(PWMBUZ_Ch, 0);
+    delay(50);
+  }
+  */
 }
 //--------------------------------------------------------------
-void EEprom_read_all() {
+void EEprom_read_all() {  
 	int leng = sizeof(Set);
 	Serial.print("   "); Serial.print(leng); Serial.println(" bytes read from EEPROM ");
 	for (int n = 0; n < leng; n++) {
